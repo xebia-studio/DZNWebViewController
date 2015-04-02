@@ -432,10 +432,10 @@
     NSLog(@"url : %@", url);
     
     NSDictionary *content = @{@"title": [self pageTitle], @"url": [self URL].absoluteString, @"type": kDZNWebViewControllerContentTypeLink};
-    [self presentActivityControllerWithContent:content];
+    [self presentActivityControllerWithContent:content andSender:(id)sender];
 }
 
-- (void)presentActivityControllerWithContent:(NSDictionary *)content
+- (void)presentActivityControllerWithContent:(NSDictionary *)content andSender:(id)sender
 {
     if (!content) {
         return;
@@ -451,7 +451,7 @@
     
     if ([type isEqualToString:kDZNWebViewControllerContentTypeLink]) {
         
-        [self presentActivityControllerWithItem:url andTitle:title];
+        [self presentActivityControllerWithItem:url andTitle:title andSender:sender];
     }
     if ([type isEqualToString:kDZNWebViewControllerContentTypeImage]) {
         
@@ -462,14 +462,14 @@
             NSData *data = [NSData dataWithContentsOfURL:[NSURL URLWithString:url]];
             UIImage *image = [UIImage imageWithData:data];
             dispatch_sync(dispatch_get_main_queue(), ^{
-                [self presentActivityControllerWithItem:image andTitle:title];
+                [self presentActivityControllerWithItem:image andTitle:title andSender:sender];
                 [self setActivityIndicatorsVisible:NO];
             });
         });
     }
 }
 
-- (void)presentActivityControllerWithItem:(id)item andTitle:(NSString *)title
+- (void)presentActivityControllerWithItem:(id)item andTitle:(NSString *)title andSender:(id)sender
 {
     if (!item) {
         return;
@@ -478,6 +478,10 @@
     _presentingActivities = YES;
     
     UIActivityViewController *controller = [[UIActivityViewController alloc] initWithActivityItems:@[title, item] applicationActivities:[self applicationActivitiesForItem:item]];
+    
+    if ([controller respondsToSelector:@selector(popoverPresentationController)]) {
+        controller.popoverPresentationController.barButtonItem = sender;
+    }
     
     controller.excludedActivityTypes = [self excludedActivityTypesForItem:item];
     
@@ -515,7 +519,7 @@
         
         if (content.allValues.count > 0) {
             [content setObject:[NSValue valueWithCGPoint:point] forKey:@"location"];
-            [self presentActivityControllerWithContent:content];
+            [self presentActivityControllerWithContent:content andSender:nil];
         }
     }
 }
